@@ -93,6 +93,50 @@ std::vector<int> State::getListOfMoves() const
 	return moves;
 }
 
+int getPerfectMove(const State &game)
+{
+	// perfect strategy taken from the wikipedia article on tic tac toe
+	// there may be errors in my implementation here or the wikipedia article may not be describing exactly the perfect strategy that it thinks it is
+
+	const auto winstates = std::vector<std::vector<int>>{ {0,1,2}, {3,4,5}, {6,7,8}, {0,3,6}, {1,4,7}, {2,5,8}, {0,4,8}, {2,4,6} };
+	const std::array<Tile,9> board = game.getBoard();
+	const Player theplayer = game.getPlayerToMove();
+	// const Player otherplayer = (theplayer == Player::X) ? Player::O : Player::X;
+	const Tile thetile = (theplayer == Player::X) ? Tile::X : Tile::O;
+	const Tile othertile = (theplayer == Player::X) ? Tile::O : Tile::X;
+
+	// step 1 and 2: check for a possibility to directly win
+	for (const auto i : winstates)
+	{
+		int ours = 0;
+		int theirs = 0;
+		std::vector<int> empties;
+		for (const int j : i)
+		{
+			if (board[j] == thetile)
+				ours++;
+			else if (board[j] == othertile)
+				theirs++;
+			else
+				empties.push_back(j);
+		}
+		if (ours == 2 && empties.size() == 1)
+			return empties[0]; // win
+		if (theirs == 2 && empties.size() == 1)
+			return empties[0]; // block their win
+	}
+
+	// step 3: make a fork if possible
+	// this is harder than it seems
+
+	// for now
+	std::vector<int> moves = game.getListOfMoves();
+	std::random_device random_device;
+	std::mt19937 engine{random_device()};
+	std::uniform_int_distribution<int> dist(0, moves.size() - 1);
+	return moves[dist(engine)];
+}
+
 void drawgame(const State &game)
 {
 	std::array<Tile,9> board = game.getBoard();
@@ -149,9 +193,10 @@ int main(int argc, char **argv)
 
 	if (opponentchoice == "perfect-ai")
 	{
-		std::cout << "perfect-ai not implemented.\n";
-		return 0;
+		std::cout << "note: perfect-ai not totally implemented; it will play imperfectly.\n";
 	}
+
+	std::cout << "\n";
 
 	State game = State();
 
@@ -177,12 +222,10 @@ int main(int argc, char **argv)
 				std::uniform_int_distribution<int> dist(0, moves.size() - 1);
 				move = moves[dist(engine)];
 			}
-			/*
 			if (opponentchoice == "perfect-ai")
 			{
-				
+				move = getPerfectMove(game);
 			}
-			*/
 			std::cout << "The " << opponentchoice << " played in tile " << move << ".\n";
 		}
 
