@@ -4,6 +4,7 @@
 #include <vector>
 #include <array>
 #include <algorithm>
+#include <random>
 #include <iostream>
 
 enum class Player {X, O};
@@ -117,21 +118,40 @@ void drawgame(const State &game)
 		  << boardchar[6] << "|" << boardchar[7] << "|" << boardchar[8] << "\n";
 }
 
-int main()
+int main(int argc, char **argv)
 {
 	std::cout << "t4 - a tiny tic tac toe program\n";
 	std::cout << "-------------------------------\n\n";
 
-	/*
-	std::cout << "Play as X or O? ";
-	std::string choice;
-	std::getline(std::cin, choice);
-	if (!(choice == "X" || choice == "x" || choice == "O" || choice == "o"))
+	if (argc < 3 || std::string(argv[1]) != "play" || (std::string(argv[2]) != "self" && std::string(argv[2]) != "random-ai" && std::string(argv[2]) != "perfect-ai"))
 	{
-		std::cout << "Error: choose a character in {X,x,O,o}.\n";
+		std::cout << "Usage: t4 play <opponent> where opponent is \"self\", \"random-ai\", or \"perfect-ai\".\n";
 		return 0;
 	}
-	*/
+
+	std::string opponentchoice = std::string(argv[2]);
+
+	Player playerchoice = Player::X;
+	if (opponentchoice != "self")
+	{
+		std::cout << "Play as X or O? ";
+		std::string choice;
+		std::getline(std::cin, choice);
+		if (choice == "X" || choice == "x") {
+			playerchoice = Player::X;
+		} else if (choice == "O" || choice == "o") {
+			playerchoice = Player::O;
+		} else {
+			std::cout << "Error: choose a character in {X,x,O,o}.\n";
+			return 0;
+		}
+	}
+
+	if (opponentchoice == "perfect-ai")
+	{
+		std::cout << "perfect-ai not implemented.\n";
+		return 0;
+	}
 
 	State game = State();
 
@@ -140,14 +160,35 @@ int main()
 	{
 		drawgame(game);
 
-		std::cout << "You are player " << (game.getPlayerToMove() == Player::X ? "X" : "O") << ".\n"
-			  << "Select a tile to place a mark: ";
-		std::string tilechoice;
-		std::getline(std::cin, tilechoice);
-		int tile = std::stoi(tilechoice);
-		if (!game.makeMove(tile))
+		int move = -1;
+		if (game.getPlayerToMove() == playerchoice)
 		{
-			std::cout << "You didn't pick a valid tile!\n";
+			std::cout << "You are player " << (game.getPlayerToMove() == Player::X ? "X" : "O") << ".\n"
+				  << "Select a tile to place a mark: ";
+			std::string tilechoice;
+			std::getline(std::cin, tilechoice);
+			move = std::stoi(tilechoice);
+		} else {
+			if (opponentchoice == "random-ai")
+			{
+				std::vector<int> moves = game.getListOfMoves();
+				std::random_device random_device;
+				std::mt19937 engine{random_device()};
+				std::uniform_int_distribution<int> dist(0, moves.size() - 1);
+				move = moves[dist(engine)];
+			}
+			/*
+			if (opponentchoice == "perfect-ai")
+			{
+				
+			}
+			*/
+			std::cout << "The " << opponentchoice << " played in tile " << move << ".\n";
+		}
+
+		if (!game.makeMove(move))
+		{
+			std::cout << "You or the AI didn't pick a valid tile!\n";
 		} else {
 			std::cout << "\n";
 			GameStatus gs = game.findGameStatus();
@@ -170,6 +211,8 @@ int main()
 					exit = true;
 					break;
 			}
+			if (opponentchoice == "self")
+				playerchoice = (playerchoice == Player::X) ? Player::O : Player::X;
 		}
 
 	}
