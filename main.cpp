@@ -155,6 +155,7 @@ int main()
 					break;
 				case GameStatus::Draw:
 					std::cout << "Draw!\n";
+					drawgame(game);
 					exit = true;
 					break;
 				case GameStatus::X_Won:
