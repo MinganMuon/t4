@@ -37,11 +37,6 @@ class State
 
 GameStatus State::findGameStatus() const
 {
-	// check for a draw
-	auto drawiter = std::find(board.begin(), board.end(), Tile::Empty);
-	if (drawiter == board.end())
-		return GameStatus::Draw;
-
 	// check for a win
 	// checks for the first winning combination of three --- having more than one winning combination is illogical, shouldn't ever come up, and is thus not considered
 	const auto winstates = std::vector<std::vector<int>>{ {0,1,2}, {3,4,5}, {6,7,8}, {0,3,6}, {1,4,7}, {2,5,8}, {0,4,8}, {2,4,6} };
@@ -52,6 +47,12 @@ GameStatus State::findGameStatus() const
 			return (board[i[0]] == Tile::X) ? GameStatus::X_Won : GameStatus::O_Won;
 		}
 	}
+
+	// check for a draw
+	// important to do this after checking for a win because a player could still win even if the whole board is covered
+	auto drawiter = std::find(board.begin(), board.end(), Tile::Empty);
+	if (drawiter == board.end())
+		return GameStatus::Draw;
 
 	// no end state has been reached
 	return GameStatus::NotCompleted;
