@@ -93,6 +93,43 @@ std::vector<int> State::getListOfMoves() const
 	return moves;
 }
 
+int getSimpleMove(const State &game)
+{
+	// strategy: if we can win directly, then do so; if the opponent can win directly next turn, block him; if neither case is true, then return a randomized move.
+
+	const auto winstates = std::vector<std::vector<int>>{ {0,1,2}, {3,4,5}, {6,7,8}, {0,3,6}, {1,4,7}, {2,5,8}, {0,4,8}, {2,4,6} };
+	const std::array<Tile,9> board = game.getBoard();
+	const Player theplayer = game.getPlayerToMove();
+	const Tile thetile = (theplayer == Player::X) ? Tile::X : Tile::O;
+	const Tile othertile = (theplayer == Player::X) ? Tile::O : Tile::X;
+
+	for (const auto i : winstates)
+	{
+		int ours = 0;
+		int theirs = 0;
+		std::vector<int> empties;
+		for (const int j : i)
+		{
+			if (board[j] == thetile)
+				ours++;
+			else if (board[j] == othertile)
+				theirs++;
+			else
+				empties.push_back(j);
+		}
+		if (ours == 2 && empties.size() == 1)
+			return empties[0]; // win
+		if (theirs == 2 && empties.size() == 1)
+			return empties[0]; // block their win
+	}
+
+	std::vector<int> moves = game.getListOfMoves();
+	std::random_device random_device;
+	std::mt19937 engine{random_device()};
+	std::uniform_int_distribution<int> dist(0, moves.size() - 1);
+	return moves[dist(engine)];
+}
+
 int getPerfectMove(const State &game)
 {
 	// perfect strategy taken from the wikipedia article on tic tac toe
@@ -167,9 +204,9 @@ int main(int argc, char **argv)
 	std::cout << "t4 - a tiny tic tac toe program\n";
 	std::cout << "-------------------------------\n\n";
 
-	if (argc < 3 || std::string(argv[1]) != "play" || (std::string(argv[2]) != "self" && std::string(argv[2]) != "random-ai" && std::string(argv[2]) != "perfect-ai"))
+	if (argc < 3 || std::string(argv[1]) != "play" || (std::string(argv[2]) != "self" && std::string(argv[2]) != "random-ai" && std::string(argv[2]) != "perfect-ai" && std::string(argv[2]) != "simple-ai"))
 	{
-		std::cout << "Usage: t4 play <opponent> where opponent is \"self\", \"random-ai\", or \"perfect-ai\".\n";
+		std::cout << "Usage: t4 play <opponent> where opponent is \"self\", \"random-ai\", \"simple-ai\", or \"perfect-ai\".\n";
 		return 0;
 	}
 
@@ -221,9 +258,9 @@ int main(int argc, char **argv)
 				std::mt19937 engine{random_device()};
 				std::uniform_int_distribution<int> dist(0, moves.size() - 1);
 				move = moves[dist(engine)];
-			}
-			if (opponentchoice == "perfect-ai")
-			{
+			} else if (opponentchoice == "simple-ai") {
+				move = getSimpleMove(game);
+			} else if (opponentchoice == "perfect-ai") {
 				move = getPerfectMove(game);
 			}
 			std::cout << "The " << opponentchoice << " played in tile " << move << ".\n";
